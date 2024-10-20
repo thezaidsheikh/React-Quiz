@@ -15,12 +15,16 @@ const initialState = {
   index: 0,
   answer: null,
   points: 0,
+  highScore: 0,
+  correctAnswer: 0,
+  incorrectAnswer: 0,
 };
 
 const reducer = (state, action) => {
+  debugger;
   switch (action.type) {
     case "dataReceived":
-      return { ...state, questions: action.payload, status: "ready" };
+      return { ...state, questions: action.payload, status: "finish" };
       break;
     case "dataFailed":
       return { ...state, status: "error" };
@@ -28,20 +32,32 @@ const reducer = (state, action) => {
       return { ...state, status: "active" };
     case "newAnswer": {
       const question = state.questions[state.index];
-      return { ...state, answer: action.payload, points: action.payload === question.correctOption ? state.points + question.points : state.points };
+      let points = state.points || 0;
+      let correctAnswer = state.correctAnswer || 0;
+      let incorrectAnswer = state.incorrectAnswer || 0;
+      if (action.payload === question.correctOption) {
+        points = state.points + question.points;
+        correctAnswer = state.correctAnswer + 1;
+      } else incorrectAnswer = state.incorrectAnswer + 1;
+
+      return { ...state, answer: action.payload, points: points, correctAnswer: correctAnswer, incorrectAnswer: incorrectAnswer };
     }
     case "nextQuestion": {
       return { ...state, index: state.index + 1, answer: null };
     }
     case "finish": {
+      state.highScore = state.points > state.highScore ? state.points : state.highScore;
       return { ...state, status: "finish" };
+    }
+    case "restart": {
+      return { ...initialState, questions: state.questions, highScore: state.highScore, status: "ready" };
     }
     default:
       break;
   }
 };
 function App() {
-  const [{ questions, status, index, answer, points }, dispatch] = useReducer(reducer, initialState);
+  const [{ questions, status, index, answer, points, highScore, correctAnswer, incorrectAnswer }, dispatch] = useReducer(reducer, initialState);
   const numberOfQuestions = questions.length;
 
   const maxPossiblePoints = questions.reduce((prev, curr) => prev + curr.points, 0);
@@ -69,7 +85,7 @@ function App() {
         )}
         {status == "finish" && (
           <>
-            <FinishScreen points={points} maxPossiblePoints={maxPossiblePoints} />
+            <FinishScreen points={points} maxPossiblePoints={maxPossiblePoints} dispatch={dispatch} highScore={highScore} correctAnswer={correctAnswer} incorrectAnswer={incorrectAnswer} />
           </>
         )}
       </Main>
