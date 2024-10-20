@@ -2,10 +2,24 @@ import Options from "./Options";
 
 function Question({ question, dispatch, answer }) {
   return (
-    <div>
-      <h4>{question.question}</h4>
-      <Options question={question} dispatch={dispatch} answer={answer} />
-    </div>
+    <>
+      <div>
+        <h4>{question.question}</h4>
+        <Options question={question} dispatch={dispatch} answer={answer} />
+      </div>
+      {/* {answer !== null && (
+        <div>
+          <button
+            className="btn btn-ui"
+            onClick={() => {
+              dispatch({ type: "nextQuestion" });
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )} */}
+    </>
   );
 }
 export default Question;
