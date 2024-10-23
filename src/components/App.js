@@ -8,7 +8,10 @@ import Question from "./Question";
 import Progress from "./Progress";
 import NextQuestion from "./NextQuestion";
 import FinishScreen from "./FinishScreen";
+import Timer from "./Timer";
+import Footer from "./Footer";
 
+const SEC_PER_QUEST = 10;
 const initialState = {
   questions: [],
   status: "Loading",
@@ -18,18 +21,18 @@ const initialState = {
   highScore: 0,
   correctAnswer: 0,
   incorrectAnswer: 0,
+  secRemaining: null,
 };
 
 const reducer = (state, action) => {
-  debugger;
   switch (action.type) {
     case "dataReceived":
-      return { ...state, questions: action.payload, status: "finish" };
+      return { ...state, questions: action.payload, status: "ready" };
       break;
     case "dataFailed":
       return { ...state, status: "error" };
     case "start":
-      return { ...state, status: "active" };
+      return { ...state, status: "active", secRemaining: state.questions.length * SEC_PER_QUEST };
     case "newAnswer": {
       const question = state.questions[state.index];
       let points = state.points || 0;
@@ -52,12 +55,16 @@ const reducer = (state, action) => {
     case "restart": {
       return { ...initialState, questions: state.questions, highScore: state.highScore, status: "ready" };
     }
+    case "tick": {
+      if (state.secRemaining === 0) state.highScore = state.points > state.highScore ? state.points : state.highScore;
+      return { ...state, secRemaining: state.secRemaining ? state.secRemaining - 1 : 0, status: state.secRemaining === 0 ? "finish" : state.status };
+    }
     default:
       break;
   }
 };
 function App() {
-  const [{ questions, status, index, answer, points, highScore, correctAnswer, incorrectAnswer }, dispatch] = useReducer(reducer, initialState);
+  const [{ questions, status, index, answer, points, highScore, correctAnswer, incorrectAnswer, secRemaining }, dispatch] = useReducer(reducer, initialState);
   const numberOfQuestions = questions.length;
 
   const maxPossiblePoints = questions.reduce((prev, curr) => prev + curr.points, 0);
@@ -81,6 +88,9 @@ function App() {
             <Progress numberOfQuestions={numberOfQuestions} index={index} points={points} maxPossiblePoints={maxPossiblePoints} answer={answer} />
             <Question question={questions[index]} dispatch={dispatch} answer={answer} />
             <NextQuestion dispatch={dispatch} numberOfQuestions={numberOfQuestions} index={index} answer={answer} />
+            <Footer>
+              <Timer dispatch={dispatch} secRemaining={secRemaining} />
+            </Footer>
           </>
         )}
         {status == "finish" && (
